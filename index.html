@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>estrelas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --preto: #000;
+    --branco: #fff;
+    --display: "Syne", "Arial Black", system-ui, sans-serif;
+    --corpo: "Instrument Serif", Georgia, "Times New Roman", serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--preto);
+    color: var(--branco);
+    font-family: var(--corpo);
+    overflow: hidden;
+  }
+
+  /* A cena é um grupo isolado: o disco de inversão só afeta o que está lá dentro */
+  #cena {
+    position: fixed;
+    inset: 0;
+    background: var(--preto);
+    isolation: isolate;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+
+  /* Astrolábio: círculos e meridianos, a única coisa que se move sozinha */
+  #astrolabio {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(130vw, 130vh);
+    height: max(130vw, 130vh);
+    transform: translate(-50%, -50%);
+    animation: rodar 360s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  @keyframes rodar { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+  /* Palavra gigante, só contorno, cortada pelo canto do ecrã */
+  #palavra {
+    position: absolute;
+    left: -1.5vw;
+    bottom: -3vw;
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 25vw;
+    line-height: .8;
+    letter-spacing: -0.05em;
+    color: transparent;
+    -webkit-text-stroke: 1px var(--branco);
+    pointer-events: none;
+    user-select: none;
+    z-index: 1;
+    white-space: nowrap;
+  }
+
+  #dica {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 0px) + 20px);
+    left: 22px;
+    margin: 0;
+    font-style: italic;
+    font-size: 1.25rem;
+    z-index: 4;
+    pointer-events: none;
+  }
+
+  #ceu { position: absolute; inset: 0; z-index: 2; }
+
+  .estrela {
+    position: absolute;
+    width: var(--tam, 28px);
+    height: var(--tam, 28px);
+    transform: translate(-50%, -50%);
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: crosshair;
+    transition: opacity .3s ease;
+  }
+  .estrela::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--branco);
+    clip-path: polygon(
+      50% 0%, 52.7% 43.5%, 69.8% 30.2%, 56.5% 47.3%,
+      100% 50%, 56.5% 52.7%, 69.8% 69.8%, 52.7% 56.5%,
+      50% 100%, 47.3% 56.5%, 30.2% 69.8%, 43.5% 52.7%,
+      0% 50%, 43.5% 47.3%, 30.2% 30.2%, 47.3% 43.5%);
+    transition: transform .5s cubic-bezier(.2, .8, .2, 1);
+  }
+  .estrela:hover::before,
+  .estrela.ativa::before { transform: scale(1.7) rotate(45deg); }
+  .estrela:focus-visible { outline: 1px solid var(--branco); outline-offset: 10px; }
+
+  body.sobre .estrela:not(.ativa) { opacity: .25; }
+
+  /* Disco que inverte o céu à volta da estrela */
+  #disco {
+    position: absolute;
+    left: 0; top: 0;
+    width: var(--d, 480px);
+    height: var(--d, 480px);
+    margin: calc(var(--d, 480px) / -2) 0 0 calc(var(--d, 480px) / -2);
+    border-radius: 50%;
+    background: var(--branco);
+    mix-blend-mode: difference;
+    transform: translate(var(--px, 0px), var(--py, 0px)) scale(0);
+    transition: transform .55s cubic-bezier(.2, .8, .2, 1);
+    pointer-events: none;
+    z-index: 3;
+  }
+  #disco.aberto { transform: translate(var(--px, 0px), var(--py, 0px)) scale(1); }
+
+  #fio {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    mix-blend-mode: difference;
+    pointer-events: none;
+    z-index: 4;
+  }
+  #fio line { stroke: var(--branco); stroke-width: 1; }
+
+  /* Cartão: branco puro, cantos vivos, revelado de cima para baixo */
+  #cartao {
+    position: fixed;
+    top: 0; left: 0;
+    width: min(300px, calc(100vw - 24px));
+    background: var(--branco);
+    color: var(--preto);
+    pointer-events: none;
+    z-index: 10;
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path .45s cubic-bezier(.2, .8, .2, 1);
+  }
+  #cartao.visivel { clip-path: inset(0 0 0 0); }
+
+  #cartao .foto {
+    position: relative;
+    background: var(--preto);
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+  }
+  #cartao .foto[hidden] { display: none; }
+  #cartao img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(1) contrast(1.5) brightness(1.05);
+  }
+  /* Trama de pontos por cima da fotografia */
+  #cartao .foto::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, #000 0 38%, transparent 42%) 0 0 / 4px 4px;
+    mix-blend-mode: multiply;
+    opacity: .55;
+  }
+  #cartao .corpo { padding: 14px 16px 18px; }
+  #cartao h2 {
+    margin: 0 0 8px;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 2rem;
+    line-height: .95;
+    letter-spacing: -0.04em;
+    overflow-wrap: anywhere;
+  }
+  #cartao p {
+    margin: 0;
+    font-size: 1.2rem;
+    line-height: 1.25;
+    font-style: italic;
+  }
+
+  /* Grão de película por cima de tudo */
+  #grao {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+    opacity: .14;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  #estado {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    font-style: italic;
+    font-size: 1.3rem;
+    max-width: 30ch;
+    z-index: 4;
+  }
+  #estado[hidden] { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    #astrolabio { animation: none; }
+    .estrela::before, #disco, #cartao { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="cena">
+  <svg id="astrolabio" viewBox="0 0 1000 1000" aria-hidden="true" fill="none" stroke="#fff" stroke-width="1">
+    <g opacity=".22">
+      <circle cx="500" cy="500" r="120"/>
+      <circle cx="500" cy="500" r="240"/>
+      <circle cx="500" cy="500" r="360"/>
+      <circle cx="500" cy="500" r="480"/>
+    </g>
+    <g opacity=".3">
+      <circle cx="500" cy="500" r="300" stroke-dasharray="1 9"/>
+      <circle cx="500" cy="500" r="420" stroke-dasharray="1 9"/>
+    </g>
+    <g opacity=".18">
+      <line x1="500" y1="0" x2="500" y2="1000"/>
+      <line x1="0" y1="500" x2="1000" y2="500"/>
+      <line x1="146" y1="146" x2="854" y2="854"/>
+      <line x1="854" y1="146" x2="146" y2="854"/>
+      <line x1="500" y1="0" x2="780" y2="1000"/>
+      <line x1="500" y1="0" x2="220" y2="1000"/>
+      <line x1="500" y1="1000" x2="780" y2="0"/>
+      <line x1="500" y1="1000" x2="220" y2="0"/>
+    </g>
+  </svg>
+
+  <p id="palavra" aria-hidden="true">estrelas</p>
+  <p id="dica">passa o rato por cima de uma estrela</p>
+
+  <main id="ceu" aria-label="Céu com estrelas"></main>
+  <div id="disco"></div>
+  <svg id="fio" aria-hidden="true"><line id="fio-linha" x1="0" y1="0" x2="0" y2="0" visibility="hidden"/></svg>
+  <div id="estado" role="status">a carregar estrelas…</div>
+</div>
+
+<article id="cartao" aria-hidden="true">
+  <div class="foto" hidden><img alt=""></div>
+  <div class="corpo">
+    <h2></h2>
+    <p></p>
+  </div>
+</article>
+
+<div id="grao"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+/* =========================================================
+   1. CONFIGURAÇÃO DO SUPABASE
+   Cola aqui o URL do projeto e a chave "anon" (Project Settings > API).
+   Tabela esperada: "estrelas" com as colunas
+     id (int8/uuid), titulo (text), descricao (text), imagem_url (text),
+     x (float, 0–100, opcional), y (float, 0–100, opcional), tamanho (int, opcional)
+   ========================================================= */
+const SUPABASE_URL = "https://xvpgktwxrbutclvtkqmo.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2cGdrdHd4cmJ1dGNsdnRrcW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MDU5NTksImV4cCI6MjEwNzQ4MTk1OX0.srXAspWzaD59F20-mXiNHOBiidDo7OHYb0Vfz5Rbw60";
+const TABELA = "estrelas";
+
+/* Dados de exemplo, usados enquanto o Supabase não estiver configurado. */
+function imagemExemplo(n) {
+  let aneis = "";
+  for (let i = 1; i <= 7; i++) {
+    aneis += `<circle cx="${60 + n * 35}" cy="${70 + n * 12}" r="${i * 22 + n * 4}" fill="none" stroke="#fff" stroke-width="${i % 2 ? 2 : 6}" opacity="${0.9 - i * 0.1}"/>`;
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240"><defs><radialGradient id="g" cx="${25 + n * 8}%" cy="35%" r="90%"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#222"/></radialGradient></defs><rect width="320" height="240" fill="url(#g)"/>${aneis}</svg>`;
+  return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+}
+const EXEMPLO = [
+  { id: 1, titulo: "sirius", descricao: "A mais brilhante do céu noturno, a cerca de 8,6 anos-luz.", imagem_url: imagemExemplo(1) },
+  { id: 2, titulo: "vega", descricao: "Já foi a estrela polar e voltará a sê-lo daqui a milhares de anos.", imagem_url: imagemExemplo(2) },
+  { id: 3, titulo: "betelgeuse", descricao: "Uma supergigante vermelha no ombro de Orionte.", imagem_url: imagemExemplo(3) },
+  { id: 4, titulo: "polaris", descricao: "Quase imóvel no céu, serve de referência para o norte.", imagem_url: imagemExemplo(4) },
+  { id: 5, titulo: "rigel", descricao: "Azulada e muito luminosa, no pé de Orionte.", imagem_url: imagemExemplo(5) },
+  { id: 6, titulo: "antares", descricao: "O coração vermelho do Escorpião.", imagem_url: imagemExemplo(6) },
+  { id: 7, titulo: "capela", descricao: "Na verdade, um sistema de quatro estrelas.", imagem_url: imagemExemplo(7) }
+];
+
+/* =========================================================
+   2. CARREGAR AS ESTRELAS
+   ========================================================= */
+const configurado = !SUPABASE_URL.includes("O-TEU-PROJETO");
+const ceu = document.getElementById("ceu");
+const estado = document.getElementById("estado");
+
+async function carregarEstrelas() {
+  if (!configurado) {
+    estado.hidden = true;
+    return EXEMPLO;
+  }
+  try {
+    const cliente = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { data, error } = await cliente.from(TABELA).select("*");
+    if (error) throw error;
+    if (!data || !data.length) {
+      estado.textContent = "ainda não há estrelas. adiciona linhas à tabela no Supabase.";
+      return [];
+    }
+    estado.hidden = true;
+    return data;
+  } catch (err) {
+    console.error("Erro ao ler o Supabase:", err);
+    estado.textContent = "não foi possível carregar as estrelas. verifica o URL, a chave e as permissões (RLS) da tabela.";
+    return [];
+  }
+}
+
+/* =========================================================
+   3. DESENHAR AS ESTRELAS
+   Se a linha não tiver x/y, a posição é distribuída automaticamente.
+   ========================================================= */
+const frac = n => n - Math.floor(n);
+
+function posicao(estrela, i) {
+  const x = estrela.x ?? (6 + frac(0.5 + (i + 1) * 0.7548776662) * 88);
+  const y = estrela.y ?? (14 + frac(0.5 + (i + 1) * 0.5698402909) * 70);
+  return { x, y };
+}
+
+function desenhar(estrelas) {
+  ceu.replaceChildren();
+  estrelas.forEach((e, i) => {
+    const { x, y } = posicao(e, i);
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "estrela";
+    b.style.left = x + "%";
+    b.style.top = y + "%";
+    b.style.setProperty("--tam", (e.tamanho ?? 20 + frac(i * 0.37) * 26) + "px");
+    b.setAttribute("aria-label", e.titulo || "Estrela");
+    b._dados = e;
+
+    b.addEventListener("pointerenter", ev => { if (ev.pointerType === "mouse") mostrar(b); });
+    b.addEventListener("pointerleave", ev => { if (ev.pointerType === "mouse") esconder(b); });
+    b.addEventListener("focus", () => { if (b.matches(":focus-visible")) mostrar(b); });
+    b.addEventListener("blur", () => esconder(b));
+    b.addEventListener("click", ev => {
+      ev.stopPropagation();
+      const toque = ev.pointerType === "touch" || ev.pointerType === "pen";
+      if (toque && b.classList.contains("ativa")) esconder(b);
+      else mostrar(b);
+    });
+    ceu.appendChild(b);
+  });
+}
+
+/* =========================================================
+   4. DISCO DE INVERSÃO + CARTÃO COM TEXTO, DESCRIÇÃO E IMAGEM
+   ========================================================= */
+const cartao = document.getElementById("cartao");
+const foto = cartao.querySelector(".foto");
+const cImg = cartao.querySelector("img");
+const cTitulo = cartao.querySelector("h2");
+const cDesc = cartao.querySelector("p");
+const disco = document.getElementById("disco");
+const fio = document.getElementById("fio-linha");
+let atual = null;
+
+function mostrar(botao) {
+  if (atual && atual !== botao) atual.classList.remove("ativa");
+  atual = botao;
+  botao.classList.add("ativa");
+  document.body.classList.add("sobre");
+  const d = botao._dados;
+
+  cTitulo.textContent = d.titulo || "";
+  cDesc.textContent = d.descricao || "";
+  if (d.imagem_url) {
+    cImg.src = d.imagem_url;
+    cImg.alt = d.titulo || "";
+    foto.hidden = false;
+  } else {
+    cImg.removeAttribute("src");
+    foto.hidden = true;
+  }
+
+  cartao.setAttribute("aria-hidden", "false");
+  cartao.classList.add("visivel");
+  disco.classList.add("aberto");
+  posicionar(botao);
+  cImg.onload = () => atual === botao && posicionar(botao);
+}
+
+function esconder(botao) {
+  if (atual !== botao) return;
+  botao.classList.remove("ativa");
+  atual = null;
+  document.body.classList.remove("sobre");
+  cartao.classList.remove("visivel");
+  cartao.setAttribute("aria-hidden", "true");
+  disco.classList.remove("aberto");
+  fio.setAttribute("visibility", "hidden");
+}
+
+function posicionar(botao) {
+  const margem = 12;
+  const r = botao.getBoundingClientRect();
+  const sx = r.left + r.width / 2;
+  const sy = r.top + r.height / 2;
+
+  /* disco centrado na estrela */
+  const diametro = Math.min(520, window.innerWidth * 0.9);
+  disco.style.setProperty("--d", diametro + "px");
+  disco.style.setProperty("--px", sx + "px");
+  disco.style.setProperty("--py", sy + "px");
+
+  /* cartão por cima da estrela; se não couber, por baixo */
+  const w = cartao.offsetWidth;
+  const h = cartao.offsetHeight;
+  let left = Math.max(margem, Math.min(sx - w / 2, window.innerWidth - w - margem));
+  let top = sy - h - 34;
+  if (top < margem) top = sy + 34;
+  top = Math.max(margem, Math.min(top, window.innerHeight - h - margem));
+  cartao.style.left = left + "px";
+  cartao.style.top = top + "px";
+
+  /* fio da estrela ao ponto mais próximo do cartão */
+  const px = Math.max(left, Math.min(sx, left + w));
+  const py = sy < top ? top : (sy > top + h ? top + h : sy);
+  fio.setAttribute("x1", sx);
+  fio.setAttribute("y1", sy);
+  fio.setAttribute("x2", px);
+  fio.setAttribute("y2", py);
+  fio.setAttribute("visibility", (sy < top || sy > top + h) ? "visible" : "hidden");
+}
+
+document.addEventListener("click", () => atual && esconder(atual));
+document.addEventListener("keydown", e => { if (e.key === "Escape" && atual) esconder(atual); });
+window.addEventListener("resize", () => atual && posicionar(atual));
+
+carregarEstrelas().then(desenhar);
+</script>
+</body>
+</html>
