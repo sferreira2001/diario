@@ -3,17 +3,86 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>estrelas</title>
+<script>
+/* =========================================================
+   CONFIGURAÇÃO: tudo o que se altera com frequência está aqui
+   (textos, cores, fontes, tamanhos e velocidades das animações)
+   ========================================================= */
+const CONFIG = {
+  supabase: {
+    url: "https://xvpgktwxrbutclvtkqmo.supabase.co",
+    chave: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2cGdrdHd4cmJ1dGNsdnRrcW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MDU5NTksImV4cCI6MjEwNzQ4MTk1OX0.srXAspWzaD59F20-mXiNHOBiidDo7OHYb0Vfz5Rbw60",
+    tabela: "estrelas"
+  },
+
+  /* Textos visíveis no site */
+  textos: {
+    tituloSite: "estrelas",
+    dica: "try and touch some stars",
+    botaoLista: "lista",
+    listaTitulo: "todos os trabalhos",
+    listaFechar: "← fechar",
+    contador: n => n + (n === 1 ? " trabalho" : " trabalhos"),
+    carregar: "a carregar estrelas…",
+    semEstrelas: "ainda não há estrelas. adiciona linhas à tabela no Supabase.",
+    erro: "não foi possível carregar as estrelas. verifica o URL, a chave e as permissões (RLS) da tabela.",
+    abrirRato: "clica para abrir →",
+    abrirToque: "toca outra vez para abrir →",
+    voltar: "← voltar",
+    voltarFim: "← voltar ao céu",
+    obraNaoEncontrada: "obra não encontrada"
+  },
+
+  cores: { fundo: "#000", papel: "#fff" },
+
+  /* Para trocar de fonte, muda também o <link> do Google Fonts mais abaixo */
+  fontes: {
+    titulos: '"Syne", "Arial Black", system-ui, sans-serif',
+    corpo: '"Instrument Serif", Georgia, "Times New Roman", serif'
+  },
+
+  tamanhos: {
+    estrelaMin: 20,       /* px, tamanho mínimo da estrela */
+    estrelaVar: 26,       /* px, variação aleatória acima do mínimo */
+    cartaoLargura: 300,   /* px, cartão de hover */
+    disco: 520            /* px, diâmetro do disco de inversão */
+  },
+
+  velocidades: {
+    astrolabio: "360s",       /* uma volta completa do fundo */
+    estrela: ".5s",           /* rotação da estrela ao passar o rato */
+    estrelaOpacidade: ".3s",  /* as outras estrelas a apagar */
+    cartao: ".45s",           /* cartão a abrir */
+    disco: ".55s",            /* disco a abrir */
+    discoCobrir: ".7s",       /* disco a cobrir o ecrã (entrar numa página) */
+    lista: ".2s",             /* linhas da lista */
+    cor: ".5s"                /* imagens a ganhar cor na página da obra */
+  },
+
+  grao: 0.14                  /* 0 = sem grão, 1 = muito grão */
+};
+
+(function () {
+  const c = CONFIG, v = c.velocidades, r = document.documentElement.style;
+  const mapa = {
+    "--preto": c.cores.fundo, "--branco": c.cores.papel,
+    "--display": c.fontes.titulos, "--corpo": c.fontes.corpo,
+    "--cartao-largura": c.tamanhos.cartaoLargura + "px",
+    "--vel-astrolabio": v.astrolabio, "--vel-estrela": v.estrela,
+    "--vel-estrela-opac": v.estrelaOpacidade, "--vel-cartao": v.cartao,
+    "--vel-disco": v.disco, "--vel-cobrir": v.discoCobrir,
+    "--vel-lista": v.lista, "--vel-cor": v.cor, "--grao": c.grao
+  };
+  for (const k in mapa) r.setProperty(k, mapa[k]);
+  document.title = c.textos.tituloSite;
+})();
+const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --preto: #000;
-    --branco: #fff;
-    --display: "Syne", "Arial Black", system-ui, sans-serif;
-    --corpo: "Instrument Serif", Georgia, "Times New Roman", serif;
-  }
+  /* Cores, fontes, tamanhos e velocidades vêm do CONFIG, no topo do ficheiro. */
 
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
@@ -42,7 +111,7 @@
     width: max(130vw, 130vh);
     height: max(130vw, 130vh);
     transform: translate(-50%, -50%);
-    animation: rodar 360s linear infinite;
+    animation: rodar var(--vel-astrolabio) linear infinite;
     pointer-events: none;
     z-index: 0;
   }
@@ -67,15 +136,41 @@
     white-space: nowrap;
   } */
 
-  #dica {
+  /* Barra de baixo: dica à esquerda, botão da lista ao centro, contador à direita.
+     Usa "difference" para se inverter junto com o resto quando o disco passa. */
+  #barra {
     position: absolute;
-    top: calc(env(safe-area-inset-top, 0px) + 20px);
-    left: 22px;
-    margin: 0;
-    font-style: italic;
-    font-size: 1.25rem;
-    z-index: 4;
+    left: 0; right: 0;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+    padding: 0 22px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    z-index: 5;
+    mix-blend-mode: difference;
     pointer-events: none;
+  }
+  #barra p { margin: 0; font-style: italic; font-size: 1.25rem; color: var(--branco); }
+  #dica { justify-self: start; }
+  #contador { justify-self: end; }
+  #btn-lista {
+    justify-self: center;
+    pointer-events: auto;
+    cursor: pointer;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: .95rem;
+    letter-spacing: -0.01em;
+    color: var(--branco);
+    background: transparent;
+    border: 1px solid var(--branco);
+    padding: 11px 26px;
+  }
+  #btn-lista:hover, #btn-lista:focus-visible { background: var(--branco); color: var(--preto); outline: none; }
+  @media (max-width: 640px) {
+    #barra { grid-template-columns: 1fr; justify-items: center; gap: 12px; }
+    #dica { order: -1; justify-self: center; font-size: 1.1rem; }
+    #contador { display: none; }
   }
 
   #ceu { position: absolute; inset: 0; z-index: 2; }
@@ -89,7 +184,7 @@
     border: 0;
     background: none;
     cursor: crosshair;
-    transition: opacity .3s ease;
+    transition: opacity var(--vel-estrela-opac) ease;
   }
   .estrela::before {
     content: "";
@@ -101,7 +196,7 @@
       100% 50%, 56.5% 52.7%, 69.8% 69.8%, 52.7% 56.5%,
       50% 100%, 47.3% 56.5%, 30.2% 69.8%, 43.5% 52.7%,
       0% 50%, 43.5% 47.3%, 30.2% 30.2%, 47.3% 43.5%);
-    transition: transform .5s cubic-bezier(.2, .8, .2, 1);
+    transition: transform var(--vel-estrela) cubic-bezier(.2, .8, .2, 1);
   }
   .estrela:hover::before,
   .estrela.ativa::before { transform: scale(1.7) rotate(45deg); }
@@ -121,14 +216,14 @@
     background: var(--branco);
     mix-blend-mode: difference;
     transform: translate(var(--px, 0px), var(--py, 0px)) scale(0);
-    transition: transform .55s cubic-bezier(.2, .8, .2, 1);
+    transition: transform var(--vel-disco) cubic-bezier(.2, .8, .2, 1);
     pointer-events: none;
     z-index: 3;
   }
   #disco.aberto { transform: translate(var(--px, 0px), var(--py, 0px)) scale(1); }
   #disco.cobre {
     transform: translate(var(--px, 0px), var(--py, 0px)) scale(var(--k, 6));
-    transition-duration: .7s;
+    transition-duration: var(--vel-cobrir);
     transition-timing-function: cubic-bezier(.6, 0, .2, 1);
   }
 
@@ -147,13 +242,13 @@
   #cartao {
     position: fixed;
     top: 0; left: 0;
-    width: min(300px, calc(100vw - 24px));
+    width: min(var(--cartao-largura), calc(100vw - 24px));
     background: var(--branco);
     color: var(--preto);
     pointer-events: none;
     z-index: 10;
     clip-path: inset(0 0 100% 0);
-    transition: clip-path .45s cubic-bezier(.2, .8, .2, 1);
+    transition: clip-path var(--vel-cartao) cubic-bezier(.2, .8, .2, 1);
   }
   #cartao.visivel { clip-path: inset(0 0 0 0); }
 
@@ -229,8 +324,9 @@
   }
   #obra[hidden] { display: none; }
 
-  #voltar {
+  #voltar, #fechar-lista {
     position: fixed;
+    cursor: pointer;
     top: calc(env(safe-area-inset-top, 0px) + 14px);
     left: clamp(16px, 3vw, 40px);
     z-index: 2;
@@ -244,8 +340,8 @@
     padding: 10px 14px;
     border: 1px solid var(--preto);
   }
-  #voltar:hover { background: var(--branco); color: var(--preto); }
-  #voltar:focus-visible { outline: 2px solid var(--preto); outline-offset: 3px; }
+  #voltar:hover, #fechar-lista:hover { background: var(--branco); color: var(--preto); }
+  #voltar:focus-visible, #fechar-lista:focus-visible { outline: 2px solid var(--preto); outline-offset: 3px; }
 
   #obra h1 {
     margin: 0;
@@ -295,7 +391,7 @@
 
   /* Em ecrãs com rato, as imagens ficam a preto e branco e ganham cor ao passar */
   @media (hover: hover) {
-    .galeria .m { filter: grayscale(1) contrast(1.15); transition: filter .5s ease; }
+    .galeria .m { filter: grayscale(1) contrast(1.15); transition: filter var(--vel-cor) ease; }
     .galeria figure:hover .m { filter: none; }
   }
 
@@ -317,13 +413,46 @@
     .galeria figure { grid-column: 1 / -1; }
   }
 
+  /* Lista simplificada de todos os trabalhos */
+  #lista {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: var(--branco);
+    color: var(--preto);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: calc(env(safe-area-inset-top, 0px) + 84px) clamp(16px, 3vw, 40px) 12vh;
+  }
+  #lista[hidden] { display: none; }
+  #lista h2 { margin: 0 0 4vh; font-weight: 400; font-style: italic; font-size: 1.25rem; }
+  #lista ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--preto); }
+  #lista a {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    padding: 10px 0 12px;
+    border-bottom: 1px solid var(--preto);
+    color: inherit;
+    text-decoration: none;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(1.8rem, 6vw, 4.5rem);
+    line-height: .95;
+    letter-spacing: -0.045em;
+    overflow-wrap: anywhere;
+    transition: padding var(--vel-lista) ease, background var(--vel-lista) ease, color var(--vel-lista) ease;
+  }
+  #lista a:hover, #lista a:focus-visible { background: var(--preto); color: var(--branco); padding-left: 16px; outline: none; }
+  #lista .n { min-width: 2.5ch; font-family: var(--corpo); font-style: italic; font-weight: 400; font-size: 1.1rem; letter-spacing: 0; }
+
   /* Grão de película por cima de tudo */
   #grao {
     position: fixed;
     inset: 0;
     z-index: 40;
     pointer-events: none;
-    opacity: .14;
+    opacity: var(--grao);
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   }
 
@@ -373,12 +502,16 @@
   </svg>
 
 
-  <p id="dica">try and touch some stars</p>
-
   <main id="ceu" aria-label="Céu com estrelas"></main>
   <div id="disco"></div>
   <svg id="fio" aria-hidden="true"><line id="fio-linha" x1="0" y1="0" x2="0" y2="0" visibility="hidden"/></svg>
-  <div id="estado" role="status">a carregar estrelas…</div>
+  <div id="estado" role="status" data-t="carregar"></div>
+
+  <div id="barra">
+    <p id="dica" data-t="dica"></p>
+    <button id="btn-lista" type="button" data-t="botaoLista"></button>
+    <p id="contador"></p>
+  </div>
 </div>
 
 <article id="cartao" aria-hidden="true">
@@ -389,12 +522,18 @@
   <div class="corpo">
     <h2></h2>
     <p></p>
-    <span class="abrir"><span class="rato">clica para abrir →</span><span class="toque">toca outra vez para abrir →</span></span>
+    <span class="abrir"><span class="rato" data-t="abrirRato"></span><span class="toque" data-t="abrirToque"></span></span>
   </div>
 </article>
 
+<section id="lista" aria-label="Lista de trabalhos" hidden>
+  <button id="fechar-lista" type="button" data-t="listaFechar"></button>
+  <h2 data-t="listaTitulo"></h2>
+  <ol></ol>
+</section>
+
 <section id="obra" aria-label="Obra" hidden>
-  <a id="voltar" href="#/" data-voltar>← voltar</a>
+  <a id="voltar" href="#/" data-voltar data-t="voltar"></a>
   <div id="obra-conteudo"></div>
 </section>
 
@@ -409,10 +548,10 @@
      imagem_url, media_1 … media_5   (imagens, vídeos .mp4/.webm ou links do YouTube)
      x, y (0–100, opcional), tamanho (px, opcional)
    ========================================================= */
-const SUPABASE_URL = "https://xvpgktwxrbutclvtkqmo.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2cGdrdHd4cmJ1dGNsdnRrcW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MDU5NTksImV4cCI6MjEwNzQ4MTk1OX0.srXAspWzaD59F20-mXiNHOBiidDo7OHYb0Vfz5Rbw60";
-const TABELA = "estrelas";
-const TITULO_SITE = "estrelas";
+const SUPABASE_URL = CONFIG.supabase.url;
+const SUPABASE_ANON_KEY = CONFIG.supabase.chave;
+const TABELA = CONFIG.supabase.tabela;
+const TITULO_SITE = CONFIG.textos.tituloSite;
 
 /* Dados de exemplo, usados enquanto o Supabase não estiver configurado. */
 function imagemExemplo(n) {
@@ -449,14 +588,14 @@ async function carregarEstrelas() {
     const { data, error } = await cliente.from(TABELA).select("*");
     if (error) throw error;
     if (!data || !data.length) {
-      estado.textContent = "ainda não há estrelas. adiciona linhas à tabela no Supabase.";
+      estado.textContent = CONFIG.textos.semEstrelas;
       return [];
     }
     estado.hidden = true;
     return data;
   } catch (err) {
     console.error("Erro ao ler o Supabase:", err);
-    estado.textContent = "não foi possível carregar as estrelas. verifica o URL, a chave e as permissões (RLS) da tabela.";
+    estado.textContent = CONFIG.textos.erro;
     return [];
   }
 }
@@ -539,7 +678,7 @@ function desenhar(estrelas) {
     b.className = "estrela";
     b.style.left = x + "%";
     b.style.top = y + "%";
-    b.style.setProperty("--tam", (e.tamanho ?? 20 + frac(i * 0.37) * 26) + "px");
+    b.style.setProperty("--tam", (e.tamanho ?? CONFIG.tamanhos.estrelaMin + frac(i * 0.37) * CONFIG.tamanhos.estrelaVar) + "px");
     b.setAttribute("aria-label", e.titulo || "Estrela");
     b._dados = e;
 
@@ -627,7 +766,7 @@ function posicionar(botao) {
   const sy = r.top + r.height / 2;
 
   /* disco centrado na estrela */
-  const diametro = Math.min(520, window.innerWidth * 0.9);
+  const diametro = Math.min(CONFIG.tamanhos.disco, window.innerWidth * 0.9);
   disco.style.setProperty("--d", diametro + "px");
   disco.style.setProperty("--px", sx + "px");
   disco.style.setProperty("--py", sy + "px");
@@ -657,22 +796,27 @@ function posicionar(botao) {
    ========================================================= */
 let veioDoCeu = false;
 
-function entrar(botao) {
-  const d = botao._dados;
-  ultimaEstrela = botao;
-
-  const r = botao.getBoundingClientRect();
+/* Faz o disco crescer a partir de "origem" até cobrir o ecrã e depois muda de página */
+function cobrir(origem, destino) {
+  const r = origem.getBoundingClientRect();
   const sx = r.left + r.width / 2;
   const sy = r.top + r.height / 2;
   const W = window.innerWidth, H = window.innerHeight;
-  const D = Math.min(520, W * 0.9);
+  const D = Math.min(CONFIG.tamanhos.disco, W * 0.9);
   const raio = Math.hypot(Math.max(sx, W - sx), Math.max(sy, H - sy));
   disco.style.setProperty("--d", D + "px");
   disco.style.setProperty("--px", sx + "px");
   disco.style.setProperty("--py", sy + "px");
   disco.style.setProperty("--k", (2 * raio + 80) / D);
+  cena.inert = true;
+  disco.classList.add("aberto", "cobre");
+  veioDoCeu = true;
+  setTimeout(() => { location.hash = destino; },
+    reduzirMovimento ? 0 : Math.max(0, emMs(CONFIG.velocidades.discoCobrir) - 60));
+}
 
-  /* limpar o estado de pré-visualização */
+function entrar(botao) {
+  ultimaEstrela = botao;
   botao.classList.remove("ativa");
   atual = null;
   document.body.classList.remove("sobre");
@@ -680,13 +824,7 @@ function entrar(botao) {
   cartao.setAttribute("aria-hidden", "true");
   fio.setAttribute("visibility", "hidden");
   cVid.pause();
-  cena.inert = true;
-
-  disco.classList.add("aberto", "cobre");
-  veioDoCeu = true;
-  setTimeout(() => {
-    location.hash = "#/obra/" + encodeURIComponent(String(d.id));
-  }, reduzirMovimento ? 0 : 640);
+  cobrir(botao, "#/obra/" + encodeURIComponent(String(botao._dados.id)));
 }
 
 /* =========================================================
@@ -750,7 +888,7 @@ function mostrarObra(id) {
   obraConteudo.replaceChildren();
 
   if (!e) {
-    obraConteudo.append(el("h1", "", "obra não encontrada"));
+    obraConteudo.append(el("h1", "", CONFIG.textos.obraNaoEncontrada));
   } else {
     obraConteudo.append(el("h1", "", e.titulo || ""));
 
@@ -771,7 +909,7 @@ function mostrarObra(id) {
     }
   }
 
-  const fim = el("a", "fim", "← voltar ao céu");
+  const fim = el("a", "fim", CONFIG.textos.voltarFim);
   fim.href = "#/";
   fim.setAttribute("data-voltar", "");
   fim.addEventListener("click", aoVoltar);
@@ -784,7 +922,7 @@ function mostrarObra(id) {
   linkVoltar.focus({ preventScroll: true });
 }
 
-function fecharObra() {
+function fecharObra(paraLista) {
   const estavaAberta = !obra.hidden;
   obra.hidden = true;
   obraConteudo.replaceChildren();   /* pára vídeos e iframes */
@@ -793,7 +931,7 @@ function fecharObra() {
   veioDoCeu = false;
   /* o disco encolhe de volta para a estrela */
   disco.classList.remove("cobre", "aberto");
-  if (estavaAberta && ultimaEstrela && ultimaEstrela.isConnected) {
+  if (estavaAberta && !paraLista && ultimaEstrela && ultimaEstrela.isConnected) {
     ultimaEstrela.focus({ preventScroll: true });
     ultimaEstrela.blur();
   }
@@ -812,11 +950,20 @@ linkVoltar.addEventListener("click", aoVoltar);
 /* Rotas por hash: "#/" é o céu, "#/obra/ID" é a página da obra.
    Funciona em GitHub Pages porque não precisa de servidor. */
 function rota() {
-  const m = location.hash.match(/^#\/obra\/(.+)$/);
+  const h = location.hash;
+  const m = h.match(/^#\/obra\/(.+)$/);
   if (m) {
     if (!carregado) return;
+    fecharLista();
     mostrarObra(decodeURIComponent(m[1]));
+  } else if (h === "#/lista") {
+    if (!carregado) return;
+    const veioDeObra = !obra.hidden;
+    fecharObra(true);
+    if (veioDeObra) veioDoCeu = true;
+    mostrarLista();
   } else {
+    fecharLista();
     fecharObra();
   }
 }
@@ -825,10 +972,51 @@ window.addEventListener("hashchange", rota);
 /* =========================================================
    8. EVENTOS GERAIS E ARRANQUE
    ========================================================= */
+const painelLista = document.getElementById("lista");
+const btnLista = document.getElementById("btn-lista");
+const btnFechar = document.getElementById("fechar-lista");
+const contador = document.getElementById("contador");
+
+function construirLista() {
+  painelLista.querySelector("ol").replaceChildren(...ESTRELAS.map((e, i) => {
+    const li = document.createElement("li");
+    const a = el("a");
+    a.href = "#/obra/" + encodeURIComponent(String(e.id));
+    a.append(el("span", "n", String(i + 1).padStart(2, "0")), el("span", "", e.titulo || ""));
+    a.addEventListener("click", () => { veioDoCeu = true; });  /* "voltar" regressa à lista */
+    li.append(a);
+    return li;
+  }));
+  contador.textContent = CONFIG.textos.contador(ESTRELAS.length);
+}
+
+function mostrarLista() {
+  painelLista.hidden = false;
+  painelLista.scrollTop = 0;
+  cena.inert = true;
+  document.title = CONFIG.textos.listaTitulo + " — " + TITULO_SITE;
+  btnFechar.focus({ preventScroll: true });
+}
+
+function fecharLista() { painelLista.hidden = true; }
+
+btnLista.addEventListener("click", ev => {
+  ev.stopPropagation();
+  if (!carregado) return;
+  if (atual) esconder(atual);
+  cobrir(btnLista, "#/lista");
+});
+btnFechar.addEventListener("click", voltar);
+
+/* =========================================================
+   8. EVENTOS GERAIS E ARRANQUE
+   ========================================================= */
+document.querySelectorAll("[data-t]").forEach(n => { n.textContent = CONFIG.textos[n.dataset.t]; });
+
 document.addEventListener("click", () => atual && esconder(atual));
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
-  if (!obra.hidden) voltar();
+  if (!obra.hidden || !painelLista.hidden) voltar();
   else if (atual) esconder(atual);
 });
 window.addEventListener("resize", () => atual && posicionar(atual));
@@ -836,6 +1024,7 @@ window.addEventListener("resize", () => atual && posicionar(atual));
 carregarEstrelas().then(lista => {
   ESTRELAS = lista;
   desenhar(lista);
+  construirLista();
   carregado = true;
   rota();
 });
