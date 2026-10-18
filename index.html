@@ -18,12 +18,23 @@ const CONFIG = {
   /* id da entrada do Supabase que o botão "about us" abre */
   sobreId: 1,
 
+  /* Página "contact us": uma linha por contacto (apaga ou acrescenta linhas à vontade).
+     Deixa "url" vazio para mostrar só texto, sem link. */
+  contactos: [
+    { rotulo: "email",     texto: "ola@exemplo.pt",   url: "mailto:ola@exemplo.pt" },
+    { rotulo: "telefone",  texto: "+351 000 000 000", url: "tel:+351000000000" },
+    { rotulo: "instagram", texto: "@o-teu-perfil",    url: "https://instagram.com/o-teu-perfil" },
+    { rotulo: "morada",    texto: "Lisboa, Portugal", url: "" }
+  ],
+
   /* Textos visíveis no site */
   textos: {
     tituloSite: "estrelas",
     dica: "try and touch some stars",
     botaoLista: "lista",
     botaoSobre: "about us",
+    botaoContacto: "contact us",
+    contactoTitulo: "contact us",
     listaTitulo: "todos os trabalhos",
     listaFechar: "← fechar",
     creditos: "website by Blow a Fuse",
@@ -157,8 +168,8 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
   #barra p { margin: 0; font-style: italic; font-size: 1.25rem; color: var(--branco); }
   #dica { justify-self: start; }
   #creditos { justify-self: end; }
-  #botoes { justify-self: center; display: flex; gap: 10px; }
-  #btn-lista, #btn-sobre {
+  #botoes { justify-self: center; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  #btn-lista, #btn-sobre, #btn-contacto {
     pointer-events: auto;
     cursor: pointer;
     font-family: var(--display);
@@ -170,8 +181,8 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
     border: 1px solid var(--branco);
     padding: 11px 26px;
   }
-  #btn-lista:hover, #btn-lista:focus-visible, #btn-sobre:hover, #btn-sobre:focus-visible { background: var(--branco); color: var(--preto); outline: none; }
-  @media (max-width: 640px) {
+  #btn-lista:hover, #btn-lista:focus-visible, #btn-sobre:hover, #btn-sobre:focus-visible, #btn-contacto:hover, #btn-contacto:focus-visible { background: var(--branco); color: var(--preto); outline: none; }
+  @media (max-width: 900px) {
     #barra { grid-template-columns: 1fr; justify-items: center; gap: 12px; }
     #dica { order: -1; justify-self: center; font-size: 1.1rem; }
     #creditos { font-size: .95rem; }
@@ -328,7 +339,7 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
   }
   #obra[hidden] { display: none; }
 
-  #voltar, #fechar-lista {
+  #voltar, #fechar-lista, #fechar-contacto {
     position: fixed;
     cursor: pointer;
     top: calc(env(safe-area-inset-top, 0px) + 14px);
@@ -344,8 +355,8 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
     padding: 10px 14px;
     border: 1px solid var(--preto);
   }
-  #voltar:hover, #fechar-lista:hover { background: var(--branco); color: var(--preto); }
-  #voltar:focus-visible, #fechar-lista:focus-visible { outline: 2px solid var(--preto); outline-offset: 3px; }
+  #voltar:hover, #fechar-lista:hover, #fechar-contacto:hover { background: var(--branco); color: var(--preto); }
+  #voltar:focus-visible, #fechar-lista:focus-visible, #fechar-contacto:focus-visible { outline: 2px solid var(--preto); outline-offset: 3px; }
 
   #obra h1 {
     margin: 0;
@@ -380,6 +391,8 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
     letter-spacing: -0.03em;
     white-space: pre-line;
   }
+  .linha figure.centro figcaption { text-align: center; }
+  .linha figure.centro .m.vertical { margin-inline: auto; }
   .txt p {
     margin: 0;
     white-space: pre-line;
@@ -428,7 +441,7 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
   }
 
   /* Lista simplificada de todos os trabalhos */
-  #lista {
+  #lista, #contacto {
     position: fixed;
     inset: 0;
     z-index: 30;
@@ -438,10 +451,10 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
     overscroll-behavior: contain;
     padding: calc(env(safe-area-inset-top, 0px) + 84px) clamp(16px, 3vw, 40px) 12vh;
   }
-  #lista[hidden] { display: none; }
-  #lista h2 { margin: 0 0 4vh; font-weight: 400; font-style: italic; font-size: 1.25rem; }
-  #lista ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--preto); }
-  #lista a {
+  #lista[hidden], #contacto[hidden] { display: none; }
+  #lista h2, #contacto h2 { margin: 0 0 4vh; font-weight: 400; font-style: italic; font-size: 1.25rem; }
+  #lista ol, #contacto ul { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--preto); }
+  #lista a, #contacto a, #contacto .sem-link {
     display: flex;
     align-items: baseline;
     gap: 18px;
@@ -457,8 +470,11 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
     overflow-wrap: anywhere;
     transition: padding var(--vel-lista) ease, background var(--vel-lista) ease, color var(--vel-lista) ease;
   }
-  #lista a:hover, #lista a:focus-visible { background: var(--preto); color: var(--branco); padding-left: 16px; outline: none; }
-  #lista .n { min-width: 2.5ch; font-family: var(--corpo); font-style: italic; font-weight: 400; font-size: 1.1rem; letter-spacing: 0; }
+  #lista a:hover, #lista a:focus-visible, #contacto a:hover, #contacto a:focus-visible { background: var(--preto); color: var(--branco); padding-left: 16px; outline: none; }
+  #lista .n, #contacto .n { min-width: 2.5ch; font-family: var(--corpo); font-style: italic; font-weight: 400; font-size: 1.1rem; letter-spacing: 0; }
+
+  #contacto .n { min-width: 9ch; }
+  #contacto a, #contacto .sem-link { font-size: clamp(1.5rem, 4.6vw, 3.4rem); }
 
   /* Grão de película por cima de tudo */
   #grao {
@@ -526,6 +542,7 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
     <div id="botoes">
       <button id="btn-lista" type="button" data-t="botaoLista"></button>
       <button id="btn-sobre" type="button" data-t="botaoSobre"></button>
+      <button id="btn-contacto" type="button" data-t="botaoContacto"></button>
     </div>
     <p id="creditos" data-t="creditos"></p>
   </div>
@@ -547,6 +564,12 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
   <button id="fechar-lista" type="button" data-t="listaFechar"></button>
   <h2 data-t="listaTitulo"></h2>
   <ol></ol>
+</section>
+
+<section id="contacto" aria-label="Contactos" hidden>
+  <button id="fechar-contacto" type="button" data-t="listaFechar"></button>
+  <h2 data-t="contactoTitulo"></h2>
+  <ul></ul>
 </section>
 
 <section id="obra" aria-label="Obra" hidden>
@@ -908,45 +931,56 @@ function mostrarObra(id) {
     obraConteudo.append(el("h1", "", CONFIG.textos.obraNaoEncontrada));
   } else {
     const limpo = v => (v == null ? "" : String(v).trim());
-    const midias = listaMedia(e);
+    const total = listaMedia(e).length;
+    let n = 0;   /* numeração das legendas */
+    const nova = u => { u = limpo(u); return u ? criarFigura(u, n++, total, e.titulo) : null; };
+    const centrar = f => { f.classList.add("centro"); f.style.setProperty("--c", "3 / 11"); };
 
-    /* topo: o título emparelhado com a imagem principal */
+    /* topo: o título emparelhado com a imagem principal (imagem_url) */
     const hero = el("div", "hero");
     hero.append(el("h1", "", e.titulo || ""));
-    const principal = midias[0] ? criarFigura(midias[0], 0, midias.length, e.titulo) : null;
+    const principal = nova(e.imagem_url);
     if (principal) { hero.classList.add("com-img"); hero.append(principal); }
     obraConteudo.append(hero);
 
-    /* depois: cada texto, com o subtítulo imediatamente por cima, ao lado de uma imagem */
-    const blocos = [
-      { sub: "",                     texto: limpo(e.descricao) },
-      { sub: limpo(e.subtitulo_1),    texto: limpo(e.descricao_2) },
-      { sub: limpo(e.subtitulo_2),    texto: limpo(e.descricao_3) }
-    ].filter(b => b.sub || b.texto);
+    /* media_1 ↔ descrição · media_2 ↔ subtítulo 1 + descrição 2 · media_3 ↔ subtítulo 2 + descrição 3 */
+    const pares = [
+      { sub: "",             texto: e.descricao,   media: e.media_1 },
+      { sub: e.subtitulo_1,   texto: e.descricao_2, media: e.media_2 },
+      { sub: e.subtitulo_2,   texto: e.descricao_3, media: e.media_3 }
+    ];
     const galeria = el("div", "galeria");
+    let lado = 0;
 
-    blocos.forEach((b, k) => {
+    pares.forEach(p => {
+      const sub = limpo(p.sub), texto = limpo(p.texto);
+      const f = nova(p.media);
+      if (!sub && !texto && !f) return;
       const linha = el("div", "linha");
-      const txt = el("div", "txt");
-      if (b.sub) txt.append(el("h2", "sub", b.sub));
-      if (b.texto) txt.append(el("p", "", b.texto));
-      const i = k + 1;   /* a imagem 0 já está no topo */
-      const f = midias[i] ? criarFigura(midias[i], i, midias.length, e.titulo) : null;
-      if (f) {
-        const direita = k % 2 === 1;
-        f.style.setProperty("--c", direita ? "6 / 13" : "1 / 8");
-        txt.style.setProperty("--t", direita ? "1 / 5" : "9 / 13");
-        linha.append(f, txt);
+      if (sub || texto) {
+        const txt = el("div", "txt");
+        if (sub) txt.append(el("h2", "sub", sub));
+        if (texto) txt.append(el("p", "", texto));
+        if (f) {
+          const direita = lado++ % 2 === 1;   /* o lado troca a cada par */
+          f.style.setProperty("--c", direita ? "6 / 13" : "1 / 8");
+          txt.style.setProperty("--t", direita ? "1 / 5" : "9 / 13");
+          linha.append(f, txt);
+        } else {
+          linha.append(txt);
+        }
       } else {
-        linha.append(txt);
+        centrar(f);   /* imagem sem texto associado */
+        linha.append(f);
       }
       galeria.append(linha);
     });
 
-    /* as imagens que sobram vêm a seguir, em posições assimétricas */
-    midias.slice(blocos.length + 1).forEach((u, j) => {
-      const f = criarFigura(u, blocos.length + 1 + j, midias.length, e.titulo);
+    /* media_4 e media_5 não têm texto: ficam centradas */
+    [e.media_4, e.media_5].forEach(u => {
+      const f = nova(u);
       if (!f) return;
+      centrar(f);
       const linha = el("div", "linha");
       linha.append(f);
       galeria.append(linha);
@@ -1000,15 +1034,22 @@ function rota() {
   if (m) {
     if (!carregado) return;
     fecharLista();
+    fecharContacto();
     mostrarObra(decodeURIComponent(m[1]));
   } else if (h === "#/lista") {
     if (!carregado) return;
     const veioDeObra = !obra.hidden;
+    fecharContacto();
     fecharObra(true);
     if (veioDeObra) veioDoCeu = true;
     mostrarLista();
+  } else if (h === "#/contacto") {
+    fecharLista();
+    fecharObra(true);
+    mostrarContacto();
   } else {
     fecharLista();
+    fecharContacto();
     fecharObra();
   }
 }
@@ -1047,6 +1088,40 @@ function mostrarLista() {
 
 function fecharLista() { painelLista.hidden = true; }
 
+/* Página "contact us", gerada a partir de CONFIG.contactos */
+const painelContacto = document.getElementById("contacto");
+const btnContacto = document.getElementById("btn-contacto");
+const btnFecharContacto = document.getElementById("fechar-contacto");
+
+function construirContacto() {
+  painelContacto.querySelector("ul").replaceChildren(...CONFIG.contactos.map(c => {
+    const li = document.createElement("li");
+    const partes = [el("span", "n", c.rotulo || ""), el("span", "", c.texto || "")];
+    if (c.url) {
+      const a = el("a");
+      a.href = c.url;
+      if (/^https?:/i.test(c.url)) { a.target = "_blank"; a.rel = "noopener noreferrer"; }
+      a.append(...partes);
+      li.append(a);
+    } else {
+      const d = el("div", "sem-link");
+      d.append(...partes);
+      li.append(d);
+    }
+    return li;
+  }));
+}
+
+function mostrarContacto() {
+  painelContacto.hidden = false;
+  painelContacto.scrollTop = 0;
+  cena.inert = true;
+  document.title = CONFIG.textos.contactoTitulo + " — " + TITULO_SITE;
+  btnFecharContacto.focus({ preventScroll: true });
+}
+
+function fecharContacto() { painelContacto.hidden = true; }
+
 btnLista.addEventListener("click", ev => {
   ev.stopPropagation();
   if (!carregado) return;
@@ -1059,17 +1134,24 @@ document.getElementById("btn-sobre").addEventListener("click", ev => {
   if (atual) esconder(atual);
   cobrir(ev.currentTarget, "#/obra/" + encodeURIComponent(String(CONFIG.sobreId)));
 });
+btnContacto.addEventListener("click", ev => {
+  ev.stopPropagation();
+  if (atual) esconder(atual);
+  cobrir(btnContacto, "#/contacto");
+});
 btnFechar.addEventListener("click", voltar);
+btnFecharContacto.addEventListener("click", voltar);
 
 /* =========================================================
    8. EVENTOS GERAIS E ARRANQUE
    ========================================================= */
+construirContacto();
 document.querySelectorAll("[data-t]").forEach(n => { n.textContent = CONFIG.textos[n.dataset.t]; });
 
 document.addEventListener("click", () => atual && esconder(atual));
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
-  if (!obra.hidden || !painelLista.hidden) voltar();
+  if (!obra.hidden || !painelLista.hidden || !painelContacto.hidden) voltar();
   else if (atual) esconder(atual);
 });
 window.addEventListener("resize", () => atual && posicionar(atual));
