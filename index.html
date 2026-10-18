@@ -984,8 +984,12 @@ const btnLista = document.getElementById("btn-lista");
 const btnFechar = document.getElementById("fechar-lista");
 const contador = document.getElementById("contador");
 
+/* A entrada do "about us" só abre pelo botão: não é estrela nem entra na lista */
+const eSobre = e => String(e.id) === String(CONFIG.sobreId);
+
 function construirLista() {
-  painelLista.querySelector("ol").replaceChildren(...ESTRELAS.map((e, i) => {
+  const visiveis = ESTRELAS.filter(e => !eSobre(e));
+  painelLista.querySelector("ol").replaceChildren(...visiveis.map((e, i) => {
     const li = document.createElement("li");
     const a = el("a");
     a.href = "#/obra/" + encodeURIComponent(String(e.id));
@@ -994,7 +998,7 @@ function construirLista() {
     li.append(a);
     return li;
   }));
-  contador.textContent = CONFIG.textos.contador(ESTRELAS.length);
+  contador.textContent = CONFIG.textos.contador(visiveis.length);
 }
 
 function mostrarLista() {
@@ -1036,7 +1040,7 @@ window.addEventListener("resize", () => atual && posicionar(atual));
 
 carregarEstrelas().then(lista => {
   ESTRELAS = lista;
-  desenhar(lista);
+  desenhar(lista.filter(e => !eSobre(e)));
   construirLista();
   carregado = true;
   rota();
