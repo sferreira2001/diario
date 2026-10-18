@@ -12,7 +12,8 @@ const CONFIG = {
   supabase: {
     url: "https://xvpgktwxrbutclvtkqmo.supabase.co",
     chave: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2cGdrdHd4cmJ1dGNsdnRrcW1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MDU5NTksImV4cCI6MjEwNzQ4MTk1OX0.srXAspWzaD59F20-mXiNHOBiidDo7OHYb0Vfz5Rbw60",
-    tabela: "estrelas"
+    tabela: "estrelas",
+    colunaOrdem: "ordem"   /* coluna numérica que define a ordem da lista (1, 2, 3…) */
   },
 
   /* id da entrada do Supabase que o botão "about us" abre */
@@ -625,7 +626,14 @@ async function carregarEstrelas() {
   }
   try {
     const cliente = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const { data, error } = await cliente.from(TABELA).select("*");
+    /* ordem: pela coluna "ordem" (vazias no fim) e, em empate, por id */
+    let { data, error } = await cliente.from(TABELA).select("*")
+      .order(CONFIG.supabase.colunaOrdem, { ascending: true, nullsFirst: false })
+      .order("id", { ascending: true });
+    if (error) {   /* ex.: a coluna ainda não existe: lê por id para o site não ficar vazio */
+      console.warn("Sem ordenação pela coluna '" + CONFIG.supabase.colunaOrdem + "':", error.message);
+      ({ data, error } = await cliente.from(TABELA).select("*").order("id", { ascending: true }));
+    }
     if (error) throw error;
     if (!data || !data.length) {
       estado.textContent = CONFIG.textos.semEstrelas;
