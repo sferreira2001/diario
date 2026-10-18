@@ -358,40 +358,42 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
     overflow-wrap: anywhere;
   }
 
-  /* Subtítulos logo abaixo do título */
-  .subs {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: 16px 24px;
-    align-items: baseline;
-    margin: 4vh 0 14vh;
-  }
-  .subs p { margin: 0; white-space: pre-line; }
-  .subs .s1 { grid-column: 1 / 9; font-style: italic; font-size: clamp(1.7rem, 3.4vw, 2.8rem); line-height: 1.1; }
-  .subs .s2 { grid-column: 9 / 13; font-family: var(--display); font-weight: 700; font-size: 1rem; letter-spacing: -0.01em; }
+  /* Topo: o título emparelhado com a imagem principal */
+  .hero { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; align-items: start; margin-bottom: 16vh; }
+  .hero h1 { grid-column: 1 / -1; grid-row: 1; }
+  .hero.com-img h1 { grid-column: 1 / 8; }
+  #obra .hero.com-img h1 { font-size: clamp(3rem, 10vw, 10rem); }
+  .hero figure { grid-column: 8 / 13; grid-row: 1; margin: calc(env(safe-area-inset-top, 0px) + 88px) 0 0; }
 
-  /* Imagem e texto lado a lado; o lado troca a cada bloco */
+  /* Blocos: texto (com o subtítulo imediatamente por cima) e imagem lado a lado;
+     o lado troca a cada bloco. Todos os textos e subtítulos têm o mesmo peso. */
   .galeria { display: flex; flex-direction: column; gap: 16vh; }
   .linha { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; }
   .linha figure { margin: 0; grid-column: var(--c, 1 / -1); grid-row: 1; }
-  .linha .txt {
-    grid-column: var(--t, 3 / 11);
-    grid-row: 1;
-    align-self: center;
+  .linha .txt { grid-column: var(--t, 3 / 11); grid-row: 1; align-self: center; }
+  .txt .sub {
+    margin: 0 0 10px;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(1.3rem, 2.2vw, 1.9rem);
+    line-height: 1;
+    letter-spacing: -0.03em;
+    white-space: pre-line;
+  }
+  .txt p {
     margin: 0;
     white-space: pre-line;
     font-style: italic;
     font-size: clamp(1.25rem, 1.9vw, 1.65rem);
     line-height: 1.3;
   }
-  .linha .txt.solo { font-size: clamp(1.7rem, 3.4vw, 2.8rem); line-height: 1.1; }
-  .galeria .m { position: relative; background: var(--preto); }
-  .galeria .m img,
-  .galeria .m video { display: block; width: 100%; height: auto; }
-  .galeria .m iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; }
-  .galeria .m.vertical { max-width: min(100%, 380px); }
-  .galeria .m.vertical iframe { aspect-ratio: 9 / 16; }
-  .galeria figcaption {
+  #obra .m { position: relative; background: var(--preto); }
+  #obra .m img,
+  #obra .m video { display: block; width: 100%; height: auto; }
+  #obra .m iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; }
+  #obra .m.vertical { max-width: min(100%, 380px); }
+  #obra .m.vertical iframe { aspect-ratio: 9 / 16; }
+  #obra figcaption {
     margin-top: 10px;
     font-style: italic;
     font-size: 1.05rem;
@@ -399,8 +401,8 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
 
   /* Em ecrãs com rato, as imagens ficam a preto e branco e ganham cor ao passar */
   @media (hover: hover) {
-    .galeria .m { filter: grayscale(1) contrast(1.15); transition: filter var(--vel-cor) ease; }
-    .galeria figure:hover .m { filter: none; }
+    #obra .m { filter: grayscale(1) contrast(1.15); transition: filter var(--vel-cor) ease; }
+    #obra figure:hover .m { filter: none; }
   }
 
   .fim {
@@ -417,9 +419,11 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
   .fim:hover { color: transparent; -webkit-text-stroke: 1px var(--preto); }
 
   @media (max-width: 760px) {
-    .subs .s1, .subs .s2 { grid-column: 1 / -1; }
-    .linha figure, .linha .txt { grid-column: 1 / -1; grid-row: auto; }
-    .linha { gap: 18px; }
+    #obra .hero.com-img h1 { font-size: clamp(3.4rem, 15vw, 14rem); }
+    .hero.com-img h1, .hero h1, .hero figure, .linha figure, .linha .txt { grid-column: 1 / -1; grid-row: auto; }
+    .hero figure { margin-top: 0; }
+    .hero, .linha { gap: 18px; }
+    .hero { margin-bottom: 10vh; }
     .galeria { gap: 10vh; }
   }
 
@@ -903,41 +907,45 @@ function mostrarObra(id) {
   if (!e) {
     obraConteudo.append(el("h1", "", CONFIG.textos.obraNaoEncontrada));
   } else {
-    obraConteudo.append(el("h1", "", e.titulo || ""));
-
     const limpo = v => (v == null ? "" : String(v).trim());
-    const s1 = limpo(e.subtitulo_1), s2 = limpo(e.subtitulo_2);
-    if (s1 || s2) {
-      const subs = el("div", "subs");
-      if (s1) subs.append(el("p", "s1", s1));
-      if (s2) subs.append(el("p", "s2", s2));
-      obraConteudo.append(subs);
-    }
-
-    const textos = [e.descricao, e.descricao_2, e.descricao_3].map(limpo).filter(Boolean);
     const midias = listaMedia(e);
+
+    /* topo: o título emparelhado com a imagem principal */
+    const hero = el("div", "hero");
+    hero.append(el("h1", "", e.titulo || ""));
+    const principal = midias[0] ? criarFigura(midias[0], 0, midias.length, e.titulo) : null;
+    if (principal) { hero.classList.add("com-img"); hero.append(principal); }
+    obraConteudo.append(hero);
+
+    /* depois: cada texto, com o subtítulo imediatamente por cima, ao lado de uma imagem */
+    const blocos = [
+      { sub: "",                     texto: limpo(e.descricao) },
+      { sub: limpo(e.subtitulo_1),    texto: limpo(e.descricao_2) },
+      { sub: limpo(e.subtitulo_2),    texto: limpo(e.descricao_3) }
+    ].filter(b => b.sub || b.texto);
     const galeria = el("div", "galeria");
 
-    /* cada texto fica ao lado de uma imagem; o lado troca a cada bloco */
-    textos.forEach((t, i) => {
+    blocos.forEach((b, k) => {
       const linha = el("div", "linha");
-      const txt = el("p", "txt", t);
+      const txt = el("div", "txt");
+      if (b.sub) txt.append(el("h2", "sub", b.sub));
+      if (b.texto) txt.append(el("p", "", b.texto));
+      const i = k + 1;   /* a imagem 0 já está no topo */
       const f = midias[i] ? criarFigura(midias[i], i, midias.length, e.titulo) : null;
       if (f) {
-        const direita = i % 2 === 1;
+        const direita = k % 2 === 1;
         f.style.setProperty("--c", direita ? "6 / 13" : "1 / 8");
         txt.style.setProperty("--t", direita ? "1 / 5" : "9 / 13");
         linha.append(f, txt);
       } else {
-        txt.classList.add("solo");
         linha.append(txt);
       }
       galeria.append(linha);
     });
 
     /* as imagens que sobram vêm a seguir, em posições assimétricas */
-    midias.slice(textos.length).forEach((u, k) => {
-      const f = criarFigura(u, textos.length + k, midias.length, e.titulo);
+    midias.slice(blocos.length + 1).forEach((u, j) => {
+      const f = criarFigura(u, blocos.length + 1 + j, midias.length, e.titulo);
       if (!f) return;
       const linha = el("div", "linha");
       linha.append(f);
