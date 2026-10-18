@@ -15,11 +15,15 @@ const CONFIG = {
     tabela: "estrelas"
   },
 
+  /* id da entrada do Supabase que o botão "about us" abre */
+  sobreId: 1,
+
   /* Textos visíveis no site */
   textos: {
     tituloSite: "estrelas",
     dica: "try and touch some stars",
     botaoLista: "lista",
+    botaoSobre: "about us",
     listaTitulo: "todos os trabalhos",
     listaFechar: "← fechar",
     contador: n => n + (n === 1 ? " trabalho" : " trabalhos"),
@@ -153,8 +157,8 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
   #barra p { margin: 0; font-style: italic; font-size: 1.25rem; color: var(--branco); }
   #dica { justify-self: start; }
   #contador { justify-self: end; }
-  #btn-lista {
-    justify-self: center;
+  #botoes { justify-self: center; display: flex; gap: 10px; }
+  #btn-lista, #btn-sobre {
     pointer-events: auto;
     cursor: pointer;
     font-family: var(--display);
@@ -166,7 +170,7 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
     border: 1px solid var(--branco);
     padding: 11px 26px;
   }
-  #btn-lista:hover, #btn-lista:focus-visible { background: var(--branco); color: var(--preto); outline: none; }
+  #btn-lista:hover, #btn-lista:focus-visible, #btn-sobre:hover, #btn-sobre:focus-visible { background: var(--branco); color: var(--preto); outline: none; }
   @media (max-width: 640px) {
     #barra { grid-template-columns: 1fr; justify-items: center; gap: 12px; }
     #dica { order: -1; justify-self: center; font-size: 1.1rem; }
@@ -509,7 +513,10 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
 
   <div id="barra">
     <p id="dica" data-t="dica"></p>
-    <button id="btn-lista" type="button" data-t="botaoLista"></button>
+    <div id="botoes">
+      <button id="btn-lista" type="button" data-t="botaoLista"></button>
+      <button id="btn-sobre" type="button" data-t="botaoSobre"></button>
+    </div>
     <p id="contador"></p>
   </div>
 </div>
@@ -1005,6 +1012,12 @@ btnLista.addEventListener("click", ev => {
   if (!carregado) return;
   if (atual) esconder(atual);
   cobrir(btnLista, "#/lista");
+});
+document.getElementById("btn-sobre").addEventListener("click", ev => {
+  ev.stopPropagation();
+  if (!carregado) return;
+  if (atual) esconder(atual);
+  cobrir(ev.currentTarget, "#/obra/" + encodeURIComponent(String(CONFIG.sobreId)));
 });
 btnFechar.addEventListener("click", voltar);
 
