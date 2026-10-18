@@ -26,7 +26,7 @@ const CONFIG = {
     botaoSobre: "about us",
     listaTitulo: "todos os trabalhos",
     listaFechar: "← fechar",
-    contador: " website by Blow a Fuse"),
+    creditos: "website by Blow a Fuse",
     carregar: "a carregar estrelas…",
     semEstrelas: "ainda não há estrelas. adiciona linhas à tabela no Supabase.",
     erro: "não foi possível carregar as estrelas. verifica o URL, a chave e as permissões (RLS) da tabela.",
@@ -140,7 +140,7 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
     white-space: nowrap;
   } */
 
-  /* Barra de baixo: dica à esquerda, botão da lista ao centro, contador à direita.
+  /* Barra de baixo: dica à esquerda, botão da lista ao centro, créditos à direita.
      Usa "difference" para se inverter junto com o resto quando o disco passa. */
   #barra {
     position: absolute;
@@ -156,7 +156,7 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
   }
   #barra p { margin: 0; font-style: italic; font-size: 1.25rem; color: var(--branco); }
   #dica { justify-self: start; }
-  #contador { justify-self: end; }
+  #creditos { justify-self: end; }
   #botoes { justify-self: center; display: flex; gap: 10px; }
   #btn-lista, #btn-sobre {
     pointer-events: auto;
@@ -174,7 +174,7 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
   @media (max-width: 640px) {
     #barra { grid-template-columns: 1fr; justify-items: center; gap: 12px; }
     #dica { order: -1; justify-self: center; font-size: 1.1rem; }
-    #contador { display: none; }
+    #creditos { font-size: .95rem; }
   }
 
   #ceu { position: absolute; inset: 0; z-index: 2; }
@@ -517,7 +517,7 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
       <button id="btn-lista" type="button" data-t="botaoLista"></button>
       <button id="btn-sobre" type="button" data-t="botaoSobre"></button>
     </div>
-    <p id="contador"></p>
+    <p id="creditos" data-t="creditos"></p>
   </div>
 </div>
 
@@ -982,7 +982,6 @@ window.addEventListener("hashchange", rota);
 const painelLista = document.getElementById("lista");
 const btnLista = document.getElementById("btn-lista");
 const btnFechar = document.getElementById("fechar-lista");
-const contador = document.getElementById("contador");
 
 /* A entrada do "about us" só abre pelo botão: não é estrela nem entra na lista */
 const eSobre = e => String(e.id) === String(CONFIG.sobreId);
@@ -998,7 +997,6 @@ function construirLista() {
     li.append(a);
     return li;
   }));
-  contador.textContent = CONFIG.textos.contador(visiveis.length);
 }
 
 function mostrarLista() {
