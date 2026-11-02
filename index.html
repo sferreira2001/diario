@@ -43,7 +43,7 @@ const CONFIG = {
     semEstrelas: "ainda não há estrelas. adiciona linhas à tabela no Supabase.",
     erro: "não foi possível carregar as estrelas. verifica o URL, a chave e as permissões (RLS) da tabela.",
     abrirRato: "click to open →",
-    abrirToque: "click again to open →",
+    abrirToque: "tap anywhere to open →",
     voltar: "← close",
     voltarFim: "← watch the night sky",
     obraNaoEncontrada: "work not found"
@@ -133,25 +133,6 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
   }
   @keyframes rodar { to { transform: translate(-50%, -50%) rotate(360deg); } }
 
-  /* Palavra gigante, só contorno, cortada pelo canto do ecrã */
- /* #palavra {
-    position: absolute;
-    left: -1.5vw;
-    bottom: -3vw;
-    margin: 0;
-    font-family: var(--display);
-    font-weight: 800;
-    font-size: 25vw;
-    line-height: .8;
-    letter-spacing: -0.05em;
-    color: transparent;
-    -webkit-text-stroke: 1px var(--branco);
-    pointer-events: none;
-    user-select: none;
-    z-index: 1;
-    white-space: nowrap;
-  } */
-
   /* Barra de baixo: dica à esquerda, botão da lista ao centro, créditos à direita.
      Usa "difference" para se inverter junto com o resto quando o disco passa. */
   #barra {
@@ -184,9 +165,9 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
   }
   #btn-lista:hover, #btn-lista:focus-visible, #btn-sobre:hover, #btn-sobre:focus-visible, #btn-contacto:hover, #btn-contacto:focus-visible { background: var(--branco); color: var(--preto); outline: none; }
   @media (max-width: 900px) {
-    #barra { grid-template-columns: 1fr; justify-items: center; gap: 12px; }
+    #barra { grid-template-columns: 1fr; justify-items: center; gap: 12px; text-align: center; }
     #dica { order: -1; justify-self: center; font-size: 1.1rem; }
-    #creditos { font-size: .95rem; }
+    #creditos { justify-self: center; text-align: center; font-size: .95rem; }
   }
 
   #ceu { position: absolute; inset: 0; z-index: 2; }
@@ -302,7 +283,10 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
     font-size: 2rem;
     line-height: .95;
     letter-spacing: -0.04em;
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: manual;
+    text-wrap: balance;
   }
   #cartao p {
     margin: 0;
@@ -323,6 +307,10 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
   @media (hover: none) {
     #cartao .abrir .rato { display: none; }
     #cartao .abrir .toque { display: inline; }
+  }
+  /* Mobile: tocar em qualquer parte do cartão abre a obra */
+  @media (hover: none) {
+    #cartao.visivel { pointer-events: auto; cursor: pointer; }
   }
 
   /* =======================================================
@@ -367,11 +355,14 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
     font-size: clamp(3.4rem, 15vw, 14rem);
     line-height: .82;
     letter-spacing: -0.055em;
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: manual;
+    text-wrap: balance;
   }
 
   /* Topo: o título emparelhado com a imagem principal */
-  .hero { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; align-items: start; margin-bottom: 16vh; }
+  .hero { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 24px; align-items: start; margin-bottom: 16vh; }
   .hero h1 { grid-column: 1 / -1; grid-row: 1; }
   .hero.com-img h1 { grid-column: 1 / 8; }
   #obra .hero.com-img h1 { font-size: clamp(3rem, 10vw, 10rem); }
@@ -380,7 +371,7 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
   /* Blocos: texto (com o subtítulo imediatamente por cima) e imagem lado a lado;
      o lado troca a cada bloco. Todos os textos e subtítulos têm o mesmo peso. */
   .galeria { display: flex; flex-direction: column; gap: 16vh; }
-  .linha { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; }
+  .linha { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 24px; }
   .linha figure { margin: 0; grid-column: var(--c, 1 / -1); grid-row: 1; }
   .linha .txt { grid-column: var(--t, 3 / 11); grid-row: 1; align-self: center; }
   .txt .sub {
@@ -391,6 +382,7 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
     line-height: 1;
     letter-spacing: -0.03em;
     white-space: pre-line;
+    text-wrap: balance;
   }
   .linha figure.centro figcaption { text-align: center; }
   .linha figure.centro .m.vertical { margin-inline: auto; }
@@ -468,7 +460,10 @@ const emMs = t => (/ms$/.test(t) ? parseFloat(t) : parseFloat(t) * 1000);
     font-size: clamp(1.8rem, 6vw, 4.5rem);
     line-height: .95;
     letter-spacing: -0.045em;
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: manual;
+    text-wrap: balance;
     transition: padding var(--vel-lista) ease, background var(--vel-lista) ease, color var(--vel-lista) ease;
   }
   #lista a:hover, #lista a:focus-visible, #contacto a:hover, #contacto a:focus-visible { background: var(--preto); color: var(--branco); padding-left: 16px; outline: none; }
@@ -746,7 +741,29 @@ function desenhar(estrelas) {
 }
 
 /* =========================================================
-   5. DISCO DE INVERSÃO + CARTÃO DE PRÉ-VISUALIZAÇÃO
+   5. AJUSTE DE TEXTO SEM QUEBRAR PALAVRAS
+   Em vez de partir uma palavra comprida, encolhe a letra até caber.
+   ========================================================= */
+function ajustarSemQuebras(n, minPx = 14) {
+  if (!n) return;
+  n.style.fontSize = "";
+  let tam = parseFloat(getComputedStyle(n).fontSize);
+  let guarda = 60;
+  while (n.scrollWidth > n.clientWidth + 1 && tam > minPx && guarda--) {
+    tam *= 0.94;
+    n.style.fontSize = tam + "px";
+  }
+}
+
+function ajustarTudo() {
+  if (!obra.hidden) obraConteudo.querySelectorAll("h1, .sub, .fim").forEach(n => ajustarSemQuebras(n));
+  if (!painelLista.hidden) painelLista.querySelectorAll("a").forEach(n => ajustarSemQuebras(n));
+  if (!painelContacto.hidden) painelContacto.querySelectorAll("a, .sem-link").forEach(n => ajustarSemQuebras(n));
+  if (atual) ajustarSemQuebras(cTitulo, 16);
+}
+
+/* =========================================================
+   6. DISCO DE INVERSÃO + CARTÃO DE PRÉ-VISUALIZAÇÃO
    ========================================================= */
 const cartao = document.getElementById("cartao");
 const foto = cartao.querySelector(".foto");
@@ -792,6 +809,7 @@ function mostrar(botao) {
   cartao.classList.add("visivel");
   disco.classList.remove("cobre");
   disco.classList.add("aberto");
+  ajustarSemQuebras(cTitulo, 16);
   posicionar(botao);
 }
 
@@ -840,7 +858,7 @@ function posicionar(botao) {
 }
 
 /* =========================================================
-   6. ENTRAR NA OBRA: o disco cresce até cobrir o ecrã
+   7. ENTRAR NA OBRA: o disco cresce até cobrir o ecrã
    ========================================================= */
 let veioDoCeu = false;
 
@@ -875,8 +893,14 @@ function entrar(botao) {
   cobrir(botao, "#/obra/" + encodeURIComponent(String(botao._dados.id)));
 }
 
+/* mobile: tocar em qualquer parte do cartão abre a obra */
+cartao.addEventListener("click", ev => {
+  ev.stopPropagation();          /* evita que o clique global feche o cartão */
+  if (atual) entrar(atual);
+});
+
 /* =========================================================
-   7. PÁGINA DA OBRA
+   8. PÁGINA DA OBRA
    ========================================================= */
 const obra = document.getElementById("obra");
 const obraConteudo = document.getElementById("obra-conteudo");
@@ -1004,6 +1028,7 @@ function mostrarObra(id) {
 
   cena.inert = true;
   obra.hidden = false;
+  ajustarTudo();
   obra.scrollTop = 0;
   document.title = (e && e.titulo ? e.titulo + " — " : "") + TITULO_SITE;
   linkVoltar.focus({ preventScroll: true });
@@ -1064,7 +1089,7 @@ function rota() {
 window.addEventListener("hashchange", rota);
 
 /* =========================================================
-   8. EVENTOS GERAIS E ARRANQUE
+   9. LISTA, CONTACTOS E BOTÕES
    ========================================================= */
 const painelLista = document.getElementById("lista");
 const btnLista = document.getElementById("btn-lista");
@@ -1088,6 +1113,7 @@ function construirLista() {
 
 function mostrarLista() {
   painelLista.hidden = false;
+  ajustarTudo();
   painelLista.scrollTop = 0;
   cena.inert = true;
   document.title = CONFIG.textos.listaTitulo + " — " + TITULO_SITE;
@@ -1122,6 +1148,7 @@ function construirContacto() {
 
 function mostrarContacto() {
   painelContacto.hidden = false;
+  ajustarTudo();
   painelContacto.scrollTop = 0;
   cena.inert = true;
   document.title = CONFIG.textos.contactoTitulo + " — " + TITULO_SITE;
@@ -1151,7 +1178,7 @@ btnFechar.addEventListener("click", voltar);
 btnFecharContacto.addEventListener("click", voltar);
 
 /* =========================================================
-   8. EVENTOS GERAIS E ARRANQUE
+   10. EVENTOS GERAIS E ARRANQUE
    ========================================================= */
 construirContacto();
 document.querySelectorAll("[data-t]").forEach(n => { n.textContent = CONFIG.textos[n.dataset.t]; });
@@ -1162,7 +1189,8 @@ document.addEventListener("keydown", e => {
   if (!obra.hidden || !painelLista.hidden || !painelContacto.hidden) voltar();
   else if (atual) esconder(atual);
 });
-window.addEventListener("resize", () => atual && posicionar(atual));
+window.addEventListener("resize", () => { ajustarTudo(); atual && posicionar(atual); });
+document.fonts && document.fonts.ready.then(ajustarTudo);   /* volta a medir quando as fontes carregarem */
 
 carregarEstrelas().then(lista => {
   ESTRELAS = lista;
